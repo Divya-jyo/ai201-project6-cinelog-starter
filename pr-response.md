@@ -1,7 +1,7 @@
 # PR Response Doc - CineLog Watchlist Feature
 
 ## AI Usage
-<!-- Fill in at the end -->
+I used Claude throughout this project for: orienting myself in the codebase before touching the review comments (summarizing models.py, collection_service.py, and test_collection.py); reviewing my code for Comments 1-3 (rename, deduplication, and the missing test) before committing; and walking through git commands step by step for the rebase and interactive rebase, including debugging a real issue where the WatchlistEntry model was silently dropped during the rebase. For Comments 4 and 5 (default visibility and sort order), I made my own decisions on which position to take and Claude helped me articulate the reasoning clearly, but the underlying design choices and tradeoffs were mine.
 
 ## Comment 1 - Rename
 **What I did:** Renamed `save_to_watchlist()` to `add_to_watchlist()` in `services/watchlist_service.py` to match the project's verb_to_noun naming convention (consistent with `add_to_collection()`). Updated both references in `routes/watchlist/watchlist.py` (the import and the call site).
@@ -31,4 +31,23 @@
 **How I verified no conflict remains:** Ran git status to confirm no unmerged files remained after git rebase --continue completed successfully. Then ran the full test suite (pytest tests/ -v) - initially this failed with an ImportError for WatchlistEntry, which confirmed the missing model. After restoring it, all 5 tests passed.
 
 ## PR Description
-<!-- Written at the end -->
+
+## What this feature does
+Adds a watchlist feature to CineLog so users can save films they want to watch later, separate from their collection of already-watched films. Includes a WatchlistEntry model, service functions (add_to_watchlist, get_watchlist), and REST endpoints.
+
+## Design decisions
+
+**Default visibility (public=True):** Watchlists default to public. CineLog is a social film-tracking app, and defaulting to public matches how people naturally use it and supports discovery - friends can see what you're excited to watch. The tradeoff is that some users may not realize their list is visible right away; this is mitigated by the public field already existing on WatchlistEntry, allowing per-item visibility control in the future.
+
+**Sort order (alphabetical, kept as-is):** Watchlists are sorted alphabetically by film title rather than by date added. As a watchlist grows, alphabetical order makes it much easier to scan for a specific title. Date-added order optimizes for recency but can bury older films you still plan to watch as the list grows.
+
+## How to manually test
+
+1. Start the app: python app.py
+2. Create a user and a film via the existing endpoints (or directly in the DB for testing).
+3. Add a film to a user's watchlist: POST /watchlist/<user_id>/add with body {"film_id": "<uuid>"}
+4. Confirm a 200/201 response and that the entry was created.
+5. Try adding the same film again - confirm it returns an error (AlreadyInWatchlistError) instead of creating a duplicate.
+6. Try adding a film_id that doesn't exist - confirm it returns FilmNotFoundError.
+7. Fetch the watchlist: GET /watchlist/<user_id> and confirm films are returned sorted alphabetically by title.
+8. Run the automated test suite: pytest tests/ -v - all 5 tests should pass.
