@@ -30,6 +30,8 @@ I used Claude throughout this project for: orienting myself in the codebase befo
 **How I resolved it:** I re-added the WatchlistEntry class to models.py, updating film_id from db.Integer to db.String(36) to match the new UUID-based Film.id, following the same pattern already used by CollectionEntry. I also added the missing watchlist_entries relationship on the Film model, and updated a stale docstring in watchlist_service.py that still referenced the old integer film_id.
 **How I verified no conflict remains:** Ran git status to confirm no unmerged files remained after git rebase --continue completed successfully. Then ran the full test suite (pytest tests/ -v) - initially this failed with an ImportError for WatchlistEntry, which confirmed the missing model. After restoring it, all 5 tests passed.
 
+![Commit history](commit-history.png)
+
 ## PR Description
 
 ## What this feature does
